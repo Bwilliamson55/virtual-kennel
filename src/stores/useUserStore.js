@@ -14,6 +14,7 @@ export const useUserStore = defineStore({
     authToken: "",
     authExpires: "",
     isAuthenticated: false,
+    results: [],
   }),
   actions: {
     setupAuthWatcher() {
@@ -40,7 +41,7 @@ export const useUserStore = defineStore({
     async authTokenCheck(token) {
       try {
         const response = await n8n
-          .post(constants["confirm-auth"], {
+          .post(constants.confirmAuth, {
             token,
           })
           .catch((error) => {
@@ -59,7 +60,7 @@ export const useUserStore = defineStore({
     async signUp({ email, phoneNumber, notifyPref }) {
       try {
         const response = await n8n
-          .post(constants["signup-post"], {
+          .post(constants.signupPost, {
             email,
             phoneNumber,
             notifyPref,
@@ -84,7 +85,7 @@ export const useUserStore = defineStore({
     async signIn({ email }) {
       try {
         const response = await n8n
-          .post(constants["login-post"], {
+          .post(constants.loginPost, {
             email,
           })
           .catch((error) => {
@@ -108,7 +109,7 @@ export const useUserStore = defineStore({
       let email = this.email;
       try {
         const response = await n8n
-          .post(constants["confirm-post"], {
+          .post(constants.confirmPost, {
             email,
             code,
           })
@@ -131,6 +132,40 @@ export const useUserStore = defineStore({
         this.code = 500;
         this.message = `Network error: ${error}, please try again`;
       }
+    },
+    async signOut() {
+      this.authToken = "";
+      this.authExpires = "";
+      this.router.push("/login");
+    },
+    async search(query) {
+      try {
+        const response = await n8n
+          .get(constants.search, {
+            params: {
+              q: query,
+            },
+          })
+          .catch((error) => {
+            return error.response;
+          });
+        const data = this.ensureArray(response.data);
+        this.code = response.status;
+        if (response.status === 200) {
+          this.results = data.filter((r) => !!r?.id) ?? [];
+        } else {
+          this.message = JSON.stringify(data) || "Error occurred during search";
+        }
+      } catch (error) {
+        this.code = 500;
+        this.message = `Network error: ${error}, please try again`;
+      }
+    },
+    ensureArray(obj) {
+      if (Array.isArray(obj)) {
+        return obj;
+      }
+      return [obj];
     },
   },
   persist: true,
