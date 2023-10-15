@@ -1,7 +1,7 @@
 <template>
   <q-layout view="hHh lpR fFf">
     <q-header elevated>
-      <q-toolbar>
+      <q-toolbar class="">
         <q-btn
           rounded
           icon="menu"
@@ -10,10 +10,10 @@
         />
 
         <q-toolbar-title>
-          <q-btn rounded label="Home" to="/" />
+          <q-btn rounded class="q-my-sm" label="Home" to="/" />
         </q-toolbar-title>
 
-        <div>Quasar v{{ $q.version }}</div>
+        <span>Beta - V1</span>
       </q-toolbar>
     </q-header>
 

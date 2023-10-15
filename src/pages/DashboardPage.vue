@@ -56,13 +56,6 @@
     <div class="hounds-list">
       <!-- Display list or cards of hounds -->
       <div class="q-ma-sm">
-        <q-input
-          v-model="search"
-          placeholder="Search Hounds"
-          outlined
-          dense
-          class="q-ma-xs"
-        />
         <div class="text-caption">Hounds Details/summary here</div>
         <div class="q-ma-xs">
           <q-card>
@@ -82,52 +75,9 @@
             <q-separator />
 
             <q-tab-panels v-model="tab" animated>
-              <q-tab-panel class="q-pa-md" name="list">
-                <div class="text-h6">Hound List</div>
-                <q-item style="max-width: 300px">
-                  <q-item-section avatar>
-                    <q-skeleton type="QAvatar" />
-                  </q-item-section>
-
-                  <q-item-section>
-                    <q-item-label>
-                      <q-skeleton type="text" />
-                    </q-item-label>
-                    <q-item-label caption>
-                      <q-skeleton type="text" width="65%" />
-                    </q-item-label>
-                  </q-item-section>
-                </q-item>
-
-                <q-item style="max-width: 300px">
-                  <q-item-section avatar>
-                    <q-skeleton type="QAvatar" />
-                  </q-item-section>
-
-                  <q-item-section>
-                    <q-item-label>
-                      <q-skeleton type="text" />
-                    </q-item-label>
-                    <q-item-label caption>
-                      <q-skeleton type="text" width="90%" />
-                    </q-item-label>
-                  </q-item-section>
-                </q-item>
-
-                <q-item style="max-width: 300px">
-                  <q-item-section avatar>
-                    <q-skeleton type="QAvatar" />
-                  </q-item-section>
-
-                  <q-item-section>
-                    <q-item-label>
-                      <q-skeleton type="text" width="35%" />
-                    </q-item-label>
-                    <q-item-label caption>
-                      <q-skeleton type="text" />
-                    </q-item-label>
-                  </q-item-section>
-                </q-item>
+              <q-tab-panel class="q-pa-xs-none q-pa-sm-md" name="list">
+                <div class="text-center q-ma-xs text-h6">Hound List</div>
+                <search-component />
               </q-tab-panel>
 
               <q-tab-panel name="grid">
@@ -218,6 +168,7 @@
 import { ref, toRefs } from "vue";
 import { useUserStore } from "../stores/useUserStore";
 import { useRouter } from "vue-router";
+import SearchComponent from "src/components/SearchComponent.vue";
 
 const userStore = useUserStore();
 const { message, email, authToken } = toRefs(userStore);

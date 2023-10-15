@@ -15,6 +15,8 @@ export const useUserStore = defineStore({
     authExpires: "",
     isAuthenticated: false,
     results: [],
+    kennelIds: [],
+    loading: false,
   }),
   actions: {
     setupAuthWatcher() {
@@ -155,6 +157,83 @@ export const useUserStore = defineStore({
           this.results = data.filter((r) => !!r?.id) ?? [];
         } else {
           this.message = JSON.stringify(data) || "Error occurred during search";
+        }
+      } catch (error) {
+        this.code = 500;
+        this.message = `Network error: ${error}, please try again`;
+      }
+    },
+    async fetchResults(term) {
+      this.loading = true;
+      await this.search(term);
+      this.loading = false;
+    },
+    async addToKennel(houndId) {
+      try {
+        this.loading = true;
+        const response = await n8n
+          .post(constants.addToKennel, {
+            houndId,
+          })
+          .catch((error) => {
+            return error.response;
+          });
+        const data = response.data;
+        this.code = response.status;
+        if (response.status === 200) {
+          this.message = JSON.stringify(data.message);
+          this.getKennelIds();
+        } else {
+          this.message =
+            JSON.stringify(data) || "Error occurred during add to kennel";
+        }
+      } catch (error) {
+        this.code = 500;
+        this.message = `Network error: ${error}, please try again`;
+      } finally {
+        this.loading = false;
+      }
+    },
+    async removeFromKennel(houndId) {
+      try {
+        this.loading = true;
+        const response = await n8n
+          .post(constants.removeFromKennel, {
+            houndId,
+          })
+          .catch((error) => {
+            return error.response;
+          });
+        const data = response.data;
+        this.code = response.status;
+        if (response.status === 200) {
+          this.message = JSON.stringify(data.message);
+          this.getKennelIds();
+        } else {
+          this.message =
+            JSON.stringify(data) || "Error occurred during remove from kennel";
+        }
+      } catch (error) {
+        this.code = 500;
+        this.message = `Network error: ${error}, please try again`;
+      } finally {
+        this.loading = false;
+      }
+    },
+    async getKennelIds() {
+      try {
+        const response = await n8n
+          .get(constants.getKennelIds)
+          .catch((error) => {
+            return error.response;
+          });
+        const data = response.data;
+        this.code = response.status;
+        if (response.status === 200) {
+          this.kennelIds = data?.kennel ?? [];
+        } else {
+          this.message =
+            JSON.stringify(data) || "Error occurred during get kennel";
         }
       } catch (error) {
         this.code = 500;

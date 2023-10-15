@@ -44,6 +44,8 @@ export default route(function (/* { store, ssrContext } */) {
         !userStore.isAuthenticated
       ) {
         next({ name: "login" });
+      } else if (to.path == "/" && userStore.isAuthenticated) {
+        next({ name: "dashboard" });
       } else {
         next(); // Allow navigation
       }
