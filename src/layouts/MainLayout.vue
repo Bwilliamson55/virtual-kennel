@@ -27,6 +27,16 @@
           v-bind="link"
         />
       </q-list>
+      <q-list v-if="isAuthenticated">
+        <q-item-label header> Account Links </q-item-label>
+
+        <EssentialLink
+          v-for="link in accountLinks"
+          :key="link.title"
+          v-bind="link"
+          @click="link.icon == 'logout' ? userStore.signOut() : ''"
+        />
+      </q-list>
     </q-drawer>
 
     <q-page-container>
@@ -36,8 +46,20 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, toRefs } from "vue";
 import EssentialLink from "components/EssentialLink.vue";
+import { useUserStore } from "src/stores/useUserStore";
+const userStore = useUserStore();
+const { isAuthenticated } = toRefs(userStore);
+
+const accountLinks = [
+  {
+    title: "Log Out",
+    caption: "Remove your session",
+    icon: "logout",
+    link: "#"
+  }
+];
 
 const essentialLinks = [
   {
