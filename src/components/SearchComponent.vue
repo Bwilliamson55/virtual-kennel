@@ -6,6 +6,7 @@
       :loading="localLoading"
       placeholder="Search..."
       style="min-width: 250px"
+      clearable
     >
       <template v-if="localLoading" #loading>
         <div class="q-mx-sm">
@@ -14,7 +15,10 @@
       </template>
     </q-input>
     <div class="results q-ma-xs-xs q-ma-sm-sm full-width column items-center">
-      <div v-if="!results || results.length === 0" class="row full-width">
+      <div
+        v-if="!localResults || localResults.length === 0"
+        class="row full-width"
+      >
         <q-list bordered separator class="full-width">
           <q-item v-for="i in 5" :key="i" class="full-width">
             <q-item-section avatar>
@@ -34,7 +38,7 @@
       </div>
       <q-list bordered separator class="full-width">
         <q-item
-          v-for="result in results"
+          v-for="result in localResults"
           :key="result.id"
           class="full-width q-px-xs-xs q-px-sm-sm"
         >
@@ -179,14 +183,21 @@
 </template>
 
 <script setup>
-import { ref, watch, toRefs } from "vue";
+import { ref, watch, toRefs, onMounted } from "vue";
 import { useUserStore } from "src/stores/useUserStore";
 
 const confirm = ref(false);
 const selectedDogId = ref(null);
 const skeleWidths = ["35%", "65%", "90%", "75%", "50%"];
 const userStore = useUserStore();
-const { results, loading, kennelIds } = toRefs(userStore);
+const { results, myResults, loading, kennelIds } = toRefs(userStore);
+const localResults = ref([]);
+const props = defineProps({
+  mine: {
+    type: Boolean,
+    default: false
+  }
+});
 
 const searchTerm = ref("");
 const localLoading = ref(loading);
@@ -205,8 +216,14 @@ const isInKennel = (id) => {
 };
 // Watch for searches and loading changes
 watch(searchTerm, async () => {
-  await userStore.fetchResults(searchTerm.value);
+  await userStore.fetchResults(searchTerm.value, props.mine);
+  localResults.value = props.mine ? myResults.value : results.value;
+});
+
+onMounted(async () => {
+  if (localResults.value.length === 0) {
+    await userStore.fetchResults(searchTerm.value, props.mine);
+  }
+  localResults.value = props.mine ? myResults.value : results.value;
 });
 </script>
-
-<!-- Add your scoped or general styles here -->
