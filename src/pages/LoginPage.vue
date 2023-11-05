@@ -27,9 +27,9 @@
         </div>
         <q-card-section class="q-py-none">
           <q-input
-            v-model.number="confirmCode"
+            v-model="confirmCode"
             filled
-            type="number"
+            type="text"
             mask="######"
             class="text-center"
             :rules="[(val) => (val + '').length === 6 || 'Invalid code length']"
