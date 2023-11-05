@@ -15,6 +15,7 @@ export const useUserStore = defineStore({
     authExpires: "",
     isAuthenticated: false,
     results: [],
+    myResults: [],
     kennelIds: [],
     loading: false,
   }),
@@ -24,7 +25,8 @@ export const useUserStore = defineStore({
         try {
           if (
             this.authToken &&
-            this.authExpires > new Date(Date.now()).toISOString()
+            this.authExpires > new Date(Date.now()).toISOString() &&
+            this.authTokenCheck(this.authToken)
           ) {
             n8n.defaults.headers.common[
               "Authorization"
@@ -39,6 +41,28 @@ export const useUserStore = defineStore({
           this.isAuthenticated = false;
         }
       });
+    },
+    async makeRequest({ method, endpoint, payload, onSuccess, onError }) {
+      this.loading = true;
+      try {
+        const response = await n8n[method](endpoint, payload).catch((error) => {
+          throw error.response;
+        });
+        if (response.status === 200 && onSuccess) {
+          onSuccess(response.data);
+        } else if (onError) {
+          onError(response);
+        }
+        this.code = response.status;
+      } catch (error) {
+        this.code = error.status || 500;
+        this.message = `Network error: ${error.statusText}, please try again`;
+        if (onError) {
+          onError(error);
+        }
+      } finally {
+        this.loading = false;
+      }
     },
     async authTokenCheck(token) {
       try {
@@ -59,186 +83,160 @@ export const useUserStore = defineStore({
         return false;
       }
     },
-    async signUp({ email, phoneNumber, notifyPref }) {
-      try {
-        const response = await n8n
-          .post(constants.signupPost, {
-            email,
-            phoneNumber,
-            notifyPref,
-          })
-          .catch((error) => {
-            return error.response;
-          });
-
-        const data = response.data;
-        this.code = response.status;
-        if (response.status === 200) {
+    async signUp(payload) {
+      await this.makeRequest({
+        method: "post",
+        endpoint: constants.signupPost,
+        payload,
+        onSuccess: (data) => {
           this.message = JSON.stringify(data.message);
-        } else {
+        },
+        onError: (response) => {
           this.message =
-            JSON.stringify(data) || "Error occurred during sign-up";
-        }
-      } catch (error) {
-        this.code = 500;
-        this.message = `Network error: ${error}, please try again`;
-      }
+            JSON.stringify(response.data) || "Error occurred during sign-up";
+        },
+      });
     },
-    async signIn({ email }) {
-      try {
-        const response = await n8n
-          .post(constants.loginPost, {
-            email,
-          })
-          .catch((error) => {
-            return error.response;
-          });
-
-        const data = response.data;
-        this.code = response.status;
-        if (response.status === 200) {
+    async signIn(payload) {
+      await this.makeRequest({
+        method: "post",
+        endpoint: constants.loginPost,
+        payload,
+        onSuccess: (data) => {
           this.message = JSON.stringify(data.message);
-        } else {
+        },
+        onError: (response) => {
           this.message =
-            JSON.stringify(data) || "Error occurred during sign-in";
-        }
-      } catch (error) {
-        this.code = 500;
-        this.message = `Network error: ${error}, please try again`;
-      }
+            JSON.stringify(response.data) || "Error occurred during sign-in";
+        },
+      });
     },
-    async confirmSignInCode(code) {
+    async confirmSignInCode(payload) {
       let email = this.email;
-      try {
-        const response = await n8n
-          .post(constants.confirmPost, {
-            email,
-            code,
-          })
-          .catch((error) => {
-            return error.response;
-          });
-
-        const data = response.data;
-        this.code = response.status;
-        if (response.status === 200) {
-          this.message = "Lovely!";
-          this.authToken = data.auth_token ?? "";
-          this.authExpires = data.expires_at ?? "";
+      payload = { email, code: payload };
+      await this.makeRequest({
+        method: "post",
+        endpoint: constants.confirmPost,
+        payload,
+        onSuccess: (data) => {
+          this.message = "Signed in successfully";
+          this.authToken = data.auth_token;
+          this.authExpires = data.expires_at;
           this.router.push("/dashboard");
-        } else {
+        },
+        onError: (response) => {
           this.message =
-            JSON.stringify(data) || "Error occurred during sign-up";
-        }
-      } catch (error) {
-        this.code = 500;
-        this.message = `Network error: ${error}, please try again`;
-      }
+            JSON.stringify(response.data) ||
+            "Error occurred during code confirmation";
+        },
+      });
     },
     async signOut() {
       this.authToken = "";
       this.authExpires = "";
       this.router.push("/login");
     },
-    async search(query) {
-      try {
-        const response = await n8n
-          .get(constants.search, {
-            params: {
-              q: query,
-            },
-          })
-          .catch((error) => {
-            return error.response;
-          });
-        const data = this.ensureArray(response.data);
-        this.code = response.status;
-        if (response.status === 200) {
-          this.results = data.filter((r) => !!r?.id) ?? [];
-        } else {
-          this.message = JSON.stringify(data) || "Error occurred during search";
-        }
-      } catch (error) {
-        this.code = 500;
-        this.message = `Network error: ${error}, please try again`;
+    async search(payload, mine = false) {
+      let endpoint = constants.search;
+      if (mine && this.isAuthenticated && this.user) {
+        payload = {
+          params: {
+            q: payload,
+            user: this.user,
+          },
+        };
+        endpoint = constants.getUserKennel;
+      } else {
+        payload = {
+          params: {
+            q: payload,
+          },
+        };
       }
+      await this.makeRequest({
+        method: "get",
+        endpoint: endpoint,
+        payload: payload,
+        onSuccess: (data) => {
+          if (mine) {
+            this.myResults = this.ensureArray(data).filter((r) => r?.id);
+          } else {
+            this.results = this.ensureArray(data).filter((r) => r?.id);
+          }
+        },
+        onError: (response) => {
+          this.message =
+            JSON.stringify(response.data) || "Error occurred during search";
+        },
+      });
     },
-    async fetchResults(term) {
+    async fetchResults(term, mine = false) {
       this.loading = true;
-      await this.search(term);
+      await this.search(term, mine);
       this.loading = false;
     },
-    async addToKennel(houndId) {
-      try {
-        this.loading = true;
-        const response = await n8n
-          .post(constants.addToKennel, {
-            houndId,
-          })
-          .catch((error) => {
-            return error.response;
-          });
-        const data = response.data;
-        this.code = response.status;
-        if (response.status === 200) {
+    async addToKennel(payload) {
+      payload = { houndId: payload };
+      await this.makeRequest({
+        method: "post",
+        endpoint: constants.addToKennel,
+        payload,
+        onSuccess: (data) => {
           this.message = JSON.stringify(data.message);
           this.getKennelIds();
-        } else {
+        },
+        onError: (response) => {
           this.message =
-            JSON.stringify(data) || "Error occurred during add to kennel";
-        }
-      } catch (error) {
-        this.code = 500;
-        this.message = `Network error: ${error}, please try again`;
-      } finally {
-        this.loading = false;
-      }
+            JSON.stringify(response.data) ||
+            "Error occurred during add to kennel";
+        },
+      });
     },
-    async removeFromKennel(houndId) {
-      try {
-        this.loading = true;
-        const response = await n8n
-          .post(constants.removeFromKennel, {
-            houndId,
-          })
-          .catch((error) => {
-            return error.response;
-          });
-        const data = response.data;
-        this.code = response.status;
-        if (response.status === 200) {
+    async removeFromKennel(payload) {
+      payload = { houndId: payload };
+      await this.makeRequest({
+        method: "post",
+        endpoint: constants.removeFromKennel,
+        payload,
+        onSuccess: (data) => {
           this.message = JSON.stringify(data.message);
           this.getKennelIds();
-        } else {
+        },
+        onError: (response) => {
           this.message =
-            JSON.stringify(data) || "Error occurred during remove from kennel";
-        }
-      } catch (error) {
-        this.code = 500;
-        this.message = `Network error: ${error}, please try again`;
-      } finally {
-        this.loading = false;
-      }
+            JSON.stringify(response.data) ||
+            "Error occurred during remove from kennel";
+        },
+      });
     },
     async getKennelIds() {
-      try {
-        const response = await n8n
-          .get(constants.getKennelIds)
-          .catch((error) => {
-            return error.response;
-          });
-        const data = response.data;
-        this.code = response.status;
-        if (response.status === 200) {
-          this.kennelIds = data?.kennel ?? [];
-        } else {
+      await this.makeRequest({
+        method: "get",
+        endpoint: constants.getKennelIds,
+        payload: {},
+        onSuccess: (data) => {
+          this.kennelIds = data.kennel || [];
+        },
+        onError: (response) => {
           this.message =
-            JSON.stringify(data) || "Error occurred during get kennel";
-        }
-      } catch (error) {
-        this.code = 500;
-        this.message = `Network error: ${error}, please try again`;
-      }
+            JSON.stringify(response.data) ||
+            "Error occurred during get kennel IDs";
+        },
+      });
+    },
+    async getKennel() {
+      await this.makeRequest({
+        method: "get",
+        endpoint: constants.getUserKennel,
+        payload: {},
+        onSuccess: (data) => {
+          this.results = data.kennel || [];
+        },
+        onError: (response) => {
+          this.message =
+            JSON.stringify(response.data) || "Error occurred during get kennel";
+        },
+      });
     },
     ensureArray(obj) {
       if (Array.isArray(obj)) {

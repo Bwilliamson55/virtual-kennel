@@ -9,4 +9,6 @@ export const constants = {
     "https://n8n.weeumson.com/webhook/virtual-kennel/remove-from-kennel",
   getKennelIds:
     "https://n8n.weeumson.com/webhook/virtual-kennel/get-kennel-ids",
+  getUserKennel:
+    "https://n8n.weeumson.com/webhook/virtual-kennel/get-user-kennel",
 };
