@@ -13,8 +13,7 @@
       style="max-width: 450px"
     />
     <div class="q-mt-md row justify-center">
-      <q-btn rounded label="Login" class="q-mr-md" to="/login" />
-      <q-btn rounded label="Sign Up" to="/signup" />
+      <q-btn rounded label="Login" class="q-mr-md" to="login" />
     </div>
   </q-page>
 </template>
