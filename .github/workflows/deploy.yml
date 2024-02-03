@@ -19,7 +19,7 @@ jobs:
       - name: Install and Build 🔧
         run: |
           npm install
-          quasar build
+          npm run build
 
       - name: Add .nojekyll file
         run: |
