@@ -1,0 +1,1 @@
+import{a as u,ab as r}from"./index.0f9f9acc.js";const i={dark:{type:Boolean,default:null}};function n(e,a){return u(()=>e.dark===null?a.dark.isActive:e.dark)}function m(){return{showSuccess:(t,s=5e3,o={})=>{r.create({type:"positive",message:t,timeout:s,...o})},showError:(t,s=5e3,o={})=>{r.create({type:"negative",message:t,timeout:s,...o})}}}export{n as a,m as b,i as u};
