@@ -6,7 +6,7 @@ import {
   createWebHashHistory,
 } from "vue-router";
 import routes from "./routes";
-import { useUserStore } from "src/stores/useUserStore";
+import { useAuthStore } from "src/stores/auth";
 
 /*
  * If not building with SSR mode, you can
@@ -38,23 +38,18 @@ export default route(function (/* { store, ssrContext } */) {
 
   // Router Guard to check for authentication
   Router.beforeEach((to, from, next) => {
-    const userStore = useUserStore();
-    try {
-      userStore.setupAuthWatcher();
-      if (
-        to.matched.some((record) => record.meta?.requiresAuth) &&
-        !userStore.isAuthenticated
-      ) {
-        next({ name: "login" });
-      } else if (to.path == "/" && userStore.isAuthenticated) {
-        next({ name: "dashboard" });
-      } else {
-        next(); // Allow navigation
-      }
-    } catch (error) {
-      console.log(error);
+    const authStore = useAuthStore();
+    if (
+      to.matched.some((record) => record.meta?.requiresAuth) &&
+      !authStore.isAuthenticated
+    ) {
       next({ name: "login" });
+    } else if (to.path === "/" && authStore.isAuthenticated) {
+      next({ name: "dashboard" });
+    } else {
+      next(); // Allow navigation
     }
   });
+
   return Router;
 });

@@ -27,14 +27,14 @@
           v-bind="link"
         />
       </q-list>
-      <q-list v-if="isAuthenticated">
+      <q-list>
         <q-item-label header> Account Links </q-item-label>
 
         <EssentialLink
           v-for="link in accountLinks"
           :key="link.title"
           v-bind="link"
-          @click="link.icon == 'logout' ? userStore.signOut() : ''"
+          @click="link.icon == 'logout' ? authStore.logout() : ''"
         />
       </q-list>
     </q-drawer>
@@ -46,11 +46,12 @@
 </template>
 
 <script setup>
-import { ref, toRefs } from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
 import EssentialLink from "components/EssentialLink.vue";
-import { useUserStore } from "src/stores/useUserStore";
-const userStore = useUserStore();
-const { isAuthenticated } = toRefs(userStore);
+import { useAuthStore } from "src/stores/auth";
+import { useNotification } from "src/composables/useNotification";
+const { showSuccess } = useNotification();
+const authStore = useAuthStore();
 
 const accountLinks = [
   {
@@ -110,4 +111,17 @@ const leftDrawerOpen = ref(false);
 const toggleLeftDrawer = () => {
   leftDrawerOpen.value = !leftDrawerOpen.value;
 };
+// TODO: move token watcher to its own component
+const tokenCheckerIntervalId = setInterval(async () => {
+  let refreshed = await authStore.checkTokenValidity();
+  if (refreshed) {
+    showSuccess("Token refreshed");
+  }
+}, 1000 * 30); // 30 seconds
+onMounted(async () => {
+  await authStore.checkTokenValidity();
+});
+onUnmounted(() => {
+  clearInterval(tokenCheckerIntervalId);
+});
 </script>
