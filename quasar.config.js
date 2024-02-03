@@ -64,7 +64,9 @@ module.exports = configure(function (ctx) {
       // publicPath: '/',
       // analyze: true,
       // env: {},
-      // rawDefine: {}
+      rawDefine: {
+        "globalThis.process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV),
+      },
       // ignorePublicFolder: true,
       // minify: false,
       // polyfillModulePreload: true,
