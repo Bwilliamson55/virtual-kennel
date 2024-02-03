@@ -9,16 +9,16 @@ const routes = [
         name: "login",
         component: () => import("pages/LoginPage.vue"),
       },
-      {
-        path: "signup",
-        name: "signup",
-        component: () => import("pages/SignupPage.vue"),
-      },
-      {
-        path: "search",
-        component: () => import("pages/SearchPage.vue"),
-        meta: { requiresAuth: true },
-      },
+      // {
+      //   path: "signup",
+      //   name: "signup",
+      //   component: () => import("pages/SignupPage.vue"),
+      // },
+      // {
+      //   path: "search",
+      //   component: () => import("pages/SearchPage.vue"),
+      //   meta: { requiresAuth: true },
+      // },
       {
         path: "dashboard",
         name: "dashboard",
